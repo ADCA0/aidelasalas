@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter/IPython
+.ipynb_checkpoints/
+
+# VSCode
+.vscode/
+
+# Virtual environments
+.env/
+.venv/
+venv/
+ENV/
+env.bak/
+env/
+
+# Environment/config files
+.env
+.env.*
+client_secrets.json
+secrets.toml
+streamlit_secrets.toml
+*.key
+*.pem
+
+# OS-generated
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Streamlit temp files
+.streamlit/config.toml
+.streamlit/credentials.toml
+
+MyNotes/
