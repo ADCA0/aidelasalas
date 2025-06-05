@@ -1,0 +1,2 @@
+Chat session started: 2025-06-05 23:53:24
+API Init Status: Error: GOOGLE_API_KEY environment variable not set. Please refer to API_CREDENTIALS.md.
