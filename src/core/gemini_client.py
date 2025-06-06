@@ -25,6 +25,14 @@ def initialize_client() -> tuple[bool, str]:
 
     # API Initialization
     try:
+        import google.generativeai as genai
+    except ImportError:
+        _api_key_configured = False
+        _status_message = "Error: The 'google-generativeai' library is not installed. Please install it by running 'pip install -r requirements.txt'."
+        _append_to_log(f"API Init Error: {_status_message}\n")
+        return False, _status_message
+
+    try:
         api_key = os.environ.get("GOOGLE_API_KEY")
         if not api_key:
             _api_key_configured = False
