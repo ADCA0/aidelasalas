@@ -39,6 +39,7 @@ Thumbs.db
 
 # Logs
 *.log
+knowledge_base/
 
 # Streamlit temp files
 .streamlit/config.toml
