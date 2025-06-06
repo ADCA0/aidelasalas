@@ -1,51 +1,27 @@
 import os
-# Import for google.generativeai moved into initialize_client
-import datetime
-import pathlib
+import google.generativeai as genai
+from src.core.logger import initialize_logger, log_message # Import new logger functions
 
 _model = None
 _api_key_configured = False
 _status_message = ""
-_current_log_file_path = None
-
-def _append_to_log(content: str):
-    global _current_log_file_path
-    if not _current_log_file_path:
-        # Optionally print to console if logging is not set up, or handle error
-        print(f"Log path not set. Cannot write: {content.strip()}")
-        return
-
-    try:
-        with open(_current_log_file_path, 'a', encoding='utf-8') as f:
-            f.write(content if content.endswith('\n') else content + '\n')
-    except IOError as e:
-        print(f"Error writing to log file {_current_log_file_path}: {e}")
+# _current_log_file_path and _append_to_log are removed
 
 def initialize_client() -> tuple[bool, str]:
-    global _model, _api_key_configured, _status_message, _current_log_file_path
+    global _model, _api_key_configured, _status_message
+    # _client_log_file_path = None # Optional: if we want to store it
 
-    # Setup logging path
-    try:
-        # Assuming this script is in src/core/gemini_client.py
-        # Project root is two levels up from this file's parent directory
-        current_file_path = pathlib.Path(__file__).resolve()
-        project_root = current_file_path.parent.parent.parent
-        knowledge_base_dir = project_root / "knowledge_base"
+    # Initialize logger
+    logger_initialized, logger_message, client_log_file_path = initialize_logger()
+    # global _client_log_file_path # Optional
+    # _client_log_file_path = client_log_file_path # Optional: store if needed later
 
-        knowledge_base_dir.mkdir(parents=True, exist_ok=True)
-
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_filename = f"chat_{timestamp}.txt"
-        _current_log_file_path = knowledge_base_dir / log_filename
-
-        _append_to_log(f"Chat session started: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-
-    except Exception as e:
-        # Handle exceptions during log path setup (e.g., permission issues)
-        # For now, we'll print an error, but a more robust solution might be needed
-        print(f"Error setting up log file path: {e}")
-        # We might choose to continue without logging or return an error here
-        # For this implementation, we'll allow the API init to proceed without a log file if path setup fails
+    if not logger_initialized:
+        # Log attempt to console if logger failed, as log_message itself might not work
+        print(f"Logger initialization failed: {logger_message}")
+        # We can decide if this is a fatal error for the client.
+        # For now, we'll record it but proceed with API initialization.
+        # The status message will be updated later by API init status.
 
     # API Initialization
     try:
@@ -61,7 +37,10 @@ def initialize_client() -> tuple[bool, str]:
         if not api_key:
             _api_key_configured = False
             _status_message = "Error: GOOGLE_API_KEY environment variable not set. Please refer to API_CREDENTIALS.md."
-            _append_to_log(f"API Init Status: {_status_message}\n")
+            log_message(f"API Init Status: {_status_message}\n") # Use new log_message
+            # Prepend logger status if it failed
+            if not logger_initialized:
+                _status_message = f"Logger Error: {logger_message}. API Error: {_status_message}"
             return False, _status_message
 
         genai.configure(api_key=api_key)
@@ -69,26 +48,33 @@ def initialize_client() -> tuple[bool, str]:
         _model.generate_content("test")  # Test API key and model access
         _api_key_configured = True
         _status_message = "Gemini API configured successfully."
-        _append_to_log(f"API Init Status: {_status_message}\n")
+        log_message(f"API Init Status: {_status_message}\n") # Use new log_message
+        # Prepend logger status if it failed, but API succeeded
+        if not logger_initialized:
+            _status_message = f"Logger Warning: {logger_message}. API Status: {_status_message}"
+            return True, _status_message # API part succeeded, but logger had issues
+
         return True, _status_message
     except Exception as e:
         _api_key_configured = False
         _status_message = f"Error configuring Gemini API: {str(e)}"
-        _append_to_log(f"API Init Error: {_status_message}\n")
+        log_message(f"API Init Error: {_status_message}\n") # Use new log_message
+        if not logger_initialized:
+            _status_message = f"Logger Error: {logger_message}. API Error: {_status_message}"
         return False, _status_message
 
 def fetch_gemini_response(prompt: str) -> str:
     global _model, _api_key_configured, _status_message
 
-    _append_to_log(f"User: {prompt}") # Newline will be added by _append_to_log
+    log_message(f"User: {prompt}") # Use new log_message
 
     if not _api_key_configured:
         response_text = "Error: Gemini API not configured. Cannot send message."
-        _append_to_log(f"Gemini: {response_text}")
+        log_message(f"Gemini: {response_text}") # Use new log_message
         return response_text
     if not _model:
         response_text = "Error: Gemini model not initialized."
-        _append_to_log(f"Gemini: {response_text}")
+        log_message(f"Gemini: {response_text}") # Use new log_message
         return response_text
 
     try:
@@ -101,11 +87,11 @@ def fetch_gemini_response(prompt: str) -> str:
         else:
             response_text = response.text
 
-        _append_to_log(f"Gemini: {response_text}")
+        log_message(f"Gemini: {response_text}") # Use new log_message
         return response_text
     except Exception as e:
         error_response = f"Error from API: {str(e)}"
-        _append_to_log(f"Gemini: {error_response}")
+        log_message(f"Gemini: {error_response}") # Use new log_message
         return error_response
 
 def is_configured() -> bool:
