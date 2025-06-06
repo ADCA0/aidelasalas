@@ -1,5 +1,5 @@
 import os
-import google.generativeai as genai
+# Import for google.generativeai moved into initialize_client
 import datetime
 import pathlib
 
@@ -48,6 +48,14 @@ def initialize_client() -> tuple[bool, str]:
         # For this implementation, we'll allow the API init to proceed without a log file if path setup fails
 
     # API Initialization
+    try:
+        import google.generativeai as genai
+    except ImportError:
+        _api_key_configured = False
+        _status_message = "Error: The 'google-generativeai' library is not installed. Please install it by running 'pip install -r requirements.txt'."
+        _append_to_log(f"API Init Error: {_status_message}\n")
+        return False, _status_message
+
     try:
         api_key = os.environ.get("GOOGLE_API_KEY")
         if not api_key:
