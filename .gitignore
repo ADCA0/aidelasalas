@@ -45,3 +45,6 @@ Thumbs.db
 .streamlit/credentials.toml
 
 MyNotes/
+
+# Chatbot logs
+knowledge_base/*.txt
